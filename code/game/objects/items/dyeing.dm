@@ -52,3 +52,28 @@
 	if(.)
 		var/obj/item/target_type = .
 		color = initial(target_type.color)
+
+/obj/item/dye_pack
+	name = "dye pack"
+	desc = ABSTRACT_TYPE_DESC
+	icon = 'icons/obj/crayons.dmi'
+	icon_state = "dye_pack"
+	w_class = WEIGHT_CLASS_TINY
+	var/pack_color = COLOR_BLACK
+	var/dye_color = DYE_BLACK
+
+/obj/item/dye_pack/Initialize(mapload)
+	. = ..()
+	update_icon(UPDATE_OVERLAYS)
+
+/obj/item/dye_pack/update_overlays()
+	. = ..()
+	var/image/filling = image('icons/obj/crayons.dmi', src, "dye_overlay")
+	filling.icon += pack_color
+	. += filling
+
+/obj/item/dye_pack/red
+	name = "red dye pack"
+	desc = "This will dye your clothes red in a washing machine."
+	pack_color = COLOR_RED
+	dye_color = DYE_RED
