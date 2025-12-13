@@ -9,6 +9,10 @@ const VendingRow = (props) => {
   const { locked, bypass_lock, user, usermoney, inserted_cash, vend_ready, inserted_item_name } = data;
   let buttonText = 'ERROR!';
   let rowIcon = '';
+	let modifiedProductIconState = '';
+	if (productIconState == 'beanie') {
+		modifiedProductIconState = `${product.name.replace(/\s/g, '_')}`;
+	}
   if (locked && bypass_lock) {
     buttonText = 'FREE (' + product.price + ')';
     rowIcon = 'arrow-circle-down';
@@ -29,11 +33,11 @@ const VendingRow = (props) => {
         <DmIcon
           verticalAlign="middle"
           icon={productIcon}
-          icon_state={productIconState}
+          icon_state={modifiedProductIconState || productIconState}
           fallback={<Icon p={0.66} name={'spinner'} size={2} spin />}
         />
       </Table.Cell>
-      <Table.Cell bold>{product.name}</Table.Cell>
+      <Table.Cell bold>{product.name} {modifiedProductIconState || productIconState}</Table.Cell>
       <Table.Cell collapsing textAlign="center">
         <Box color={(productStock <= 0 && 'bad') || (productStock <= product.max_amount / 2 && 'average') || 'good'}>
           {productStock} in stock

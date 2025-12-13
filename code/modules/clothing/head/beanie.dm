@@ -15,6 +15,34 @@
 	dyeable = TRUE
 	dyeing_key = DYE_REGISTRY_BEANIE
 
+// Sprite sheet needed to keep the beanie from being white in the vendor even when colored
+/datum/asset/spritesheet/beanie
+	name = "beanie"
+	var/obj/item/clothing/head/beanie/current_typepath
+
+/datum/asset/spritesheet/beanie/create_spritesheets()
+	// The first sprite we insert is a blank 32x32 icon. This means that when we
+	// generate class names for icon state/direction combinations that don't
+	// exist, the ones with non-existent class names will instead just point to the
+	// first image on the sheet.
+	Insert("blank", 'icons/obj/clothing/hats.dmi', "blank")
+	for(var/obj/item/clothing/head/beanie/beanie_type in subtypesof(/obj/item/clothing/head/beanie))
+		current_typepath = beanie_type
+		var/beanie_classname = replace_characters("[beanie_type.name]", list(" " = "_"))
+		if(beanie_type::icon_state == "")
+			continue
+		Insert(
+			"[beanie_classname]",
+			beanie_type::icon,
+			beanie_type::icon_state,
+		)
+
+/datum/asset/spritesheet/beanie/ModifyInserted(icon/pre_asset)
+	var/icon/parent = ..()
+	if(current_typepath && current_typepath::color)
+		parent.Blend(current_typepath::color, ICON_MULTIPLY)
+	return parent
+
 /obj/item/clothing/head/beanie/black
 	name = "black beanie"
 	color = "#4A4A4B" //Grey but it looks black
