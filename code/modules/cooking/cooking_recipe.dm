@@ -1,5 +1,6 @@
 GLOBAL_LIST_EMPTY(pcwj_recipe_dictionary)
 GLOBAL_LIST_EMPTY(pcwj_cookbook_lookup)
+GLOBAL_LIST_EMPTY(pcwj_cookbook_by_ingredient)
 
 /**
  * ## ParaCooking With Jane
@@ -174,6 +175,7 @@ GLOBAL_LIST_EMPTY(pcwj_cookbook_lookup)
 			var/atom/product = example_recipe.product_type
 
 			var/list/entry = list()
+			entry["datum"] = example_recipe
 			entry["name"] = product::name
 			entry["icon"] = product::icon
 			entry["icon_state"] = product::icon_state
@@ -182,4 +184,16 @@ GLOBAL_LIST_EMPTY(pcwj_cookbook_lookup)
 			for(var/datum/cooking/recipe_step/step in example_recipe.steps)
 				entry["instructions"] += step.get_pda_formatted_desc()
 
+				if(istype(step, /datum/cooking/recipe_step/add_item))
+					var/datum/cooking/recipe_step/add_item/add_step = step
+					LAZYORASSOCLIST(GLOB.pcwj_cookbook_by_ingredient, add_step.item_type::name, example_recipe)
+				else if(istype(step, /datum/cooking/recipe_step/add_produce))
+					var/datum/cooking/recipe_step/add_produce/add_step = step
+					LAZYORASSOCLIST(GLOB.pcwj_cookbook_by_ingredient, add_step.produce_type::name, example_recipe)
+				else if(istype(step, /datum/cooking/recipe_step/add_reagent))
+					var/datum/cooking/recipe_step/add_reagent/add_step = step
+					var/datum/reagent/reagent = GLOB.chemical_reagents_list[add_step.reagent_id]
+					LAZYORASSOCLIST(GLOB.pcwj_cookbook_by_ingredient, reagent::name, example_recipe)
+
 			LAZYORASSOCLIST(GLOB.pcwj_cookbook_lookup, example_recipe.catalog_category, list(entry))
+			LAZYORASSOCLIST(GLOB.pcwj_cookbook_lookup, "All", list(entry))
