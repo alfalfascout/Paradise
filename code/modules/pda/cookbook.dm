@@ -8,15 +8,31 @@
 	update = PDA_APP_NOUPDATE
 
 	var/current_category
+	/// A list of recipes in a displayable format, with name, icon, icon_state, etc. See cooking_recipe.dm
 	var/list/recipe_list = list()
+	/// A list of key-value pairs, ingredient name = amount we have.
 	var/list/ingredients_list = list()
+	/// A list of recipe products that we can cook based on ingredients we have.
 	var/list/recipe_list_cookable = list()
 	var/search_text = ""
+	/// If false, show only ingredients we currently have, or exact search matches
+	var/show_all_ingredients = FALSE
+	/// If false, show only recipes we can cook based on ingredients we have
+	var/show_all_recipes = TRUE
+	var/tab_index = 0
 
 /datum/data/pda/app/cookbook/New()
 	..()
 	for(var/ingredient in GLOB.pcwj_cookbook_by_ingredient)
+		if(!ingredient || ingredient == "Water")
+			continue
 		ingredients_list[ingredient] = 0
+
+/datum/data/pda/app/cookbook/start()
+	..()
+	update_ingredient("Flour", 15)
+	update_ingredient("egg", 1)
+
 
 /datum/data/pda/app/cookbook/ui_interact(mob/user, datum/tgui/ui)
 	. = ..()
@@ -32,6 +48,9 @@
 	data["current_category"] = current_category
 	data["search_text"] = search_text
 	data["ingredients"] = ingredients_list
+	data["show_all_ingredients"] = show_all_ingredients
+	data["show_all_recipes"] = show_all_recipes
+	data["tabIndex"] = tab_index
 
 	return data
 
@@ -51,6 +70,15 @@
 		if("make_recipe")
 			follow_recipe(params["recipe"])
 			SStgui.update_uis(pda)
+		if("set_tab_index")
+			tab_index = params["tab_index"]
+			SStgui.update_uis(pda)
+		if("toggle_show_all_ingredients")
+			show_all_ingredients = !show_all_ingredients
+			SStgui.update_uis(pda)
+		if("toggle_show_all_recipes")
+			show_all_recipes = !show_all_recipes
+			SStgui.update_uis(pda)
 
 /// Gets the recipe for making an ingredient
 /datum/data/pda/app/cookbook/proc/get_recipe_for_ingredient(ingredient)
@@ -59,7 +87,7 @@
 			return entry["datum"]
 	return FALSE
 
-/// Changes the amount of an ingredient we have in our app list, and returns a list of recipes that should be checked against the new value.
+/// Changes the amount of an ingredient we have in our app list, and returns a list of recipe datums that should be checked against the new value.
 /datum/data/pda/app/cookbook/proc/update_ingredient(ingredient, new_amount, relative = FALSE, update_now = TRUE)
 	if(relative)
 		ingredients_list[ingredient] += new_amount
@@ -68,8 +96,12 @@
 
 	if(!update_now)
 		return GLOB.pcwj_cookbook_by_ingredient[ingredient]
-	for(var/recipe in GLOB.pcwj_cookbook_by_ingredient[ingredient])
-		check_recipe_cookability(recipe)
+	for(var/datum/cooking/recipe/each_recipe in GLOB.pcwj_cookbook_by_ingredient[ingredient])
+		var/atom/product = each_recipe.product_type
+		if(check_recipe_cookability(each_recipe))
+			recipe_list_cookable |= product::name
+		else
+			recipe_list_cookable.Remove(product::name)
 	SStgui.update_uis(pda)
 
 /// Follows the steps of a recipe to
@@ -84,15 +116,18 @@
 			recipes_to_update += update_ingredient(add_step.produce_type::name, -1, relative = TRUE, update_now = FALSE)
 		else if(istype(step, /datum/cooking/recipe_step/add_reagent))
 			var/datum/cooking/recipe_step/add_reagent/add_step = step
+			if(add_step.reagent_id == "water")
+				continue
 			var/datum/reagent/reagent = GLOB.chemical_reagents_list[add_step.reagent_id]
 			recipes_to_update += update_ingredient(reagent::name, -(add_step.amount), relative = TRUE, update_now = FALSE)
 
 	uniqueList_inplace(recipes_to_update)
-	for(var/each_recipe in recipes_to_update)
+	for(var/datum/cooking/recipe/each_recipe in recipes_to_update)
+		var/atom/product = each_recipe.product_type
 		if(check_recipe_cookability(each_recipe))
-			recipe_list_cookable |= each_recipe
+			recipe_list_cookable |= product::name
 		else
-			recipe_list_cookable.Remove(each_recipe)
+			recipe_list_cookable.Remove(product::name)
 	SStgui.update_uis(pda)
 
 /// Fakes following a recipe for the purpose of checking cookable recipes that might have ingredient conflicts
@@ -106,6 +141,8 @@
 			ingredients_possessed[add_step.produce_type::name] -= multiplier
 		else if(istype(step, /datum/cooking/recipe_step/add_reagent))
 			var/datum/cooking/recipe_step/add_reagent/add_step = step
+			if(add_step.reagent_id == "water")
+				continue
 			var/datum/reagent/reagent = GLOB.chemical_reagents_list[add_step.reagent_id]
 			ingredients_possessed[reagent::name] -= add_step.amount * multiplier
 
@@ -132,6 +169,8 @@
 
 		else if(istype(step, /datum/cooking/recipe_step/add_reagent))
 			var/datum/cooking/recipe_step/add_reagent/add_step = step
+			if(add_step.reagent_id == "water")
+				continue
 			var/datum/reagent/reagent = GLOB.chemical_reagents_list[add_step.reagent_id]
 			ingredient_name = reagent::name
 			ingredient_amount = add_step.amount * multiplier

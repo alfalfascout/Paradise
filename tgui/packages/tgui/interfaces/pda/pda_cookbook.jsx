@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Button, DmIcon, Input, Section, Stack, Table, Tabs } from 'tgui-core/components';
+import { Box, Button, DmIcon, Input, NumberInput, Section, Stack, Table, Tabs } from 'tgui-core/components';
 import { createSearch, decodeHtmlEntities } from 'tgui-core/string';
 
 import { useBackend } from '../../backend';
@@ -18,7 +18,7 @@ export const pda_cookbook = (props) => {
       case 1:
         return <CookbookRecipesView />;
       default:
-        return "Invalid tab selected. If you see this, submit a bug report with exactly what you just did to get here.";
+        return <CookbookIngredientsView />;
     }
   };
 
@@ -42,7 +42,8 @@ export const pda_cookbook = (props) => {
 
 export const CookbookIngredientsView = (props) => {
   const { act, data } = useBackend();
-  const { ingredients, search_text } = data;
+  const { ingredients, search_text, show_all_ingredients } = data;
+  const ingredientsKeys = Object.keys(ingredients)
   
   const [ingredientsList, setIngredientsList] = useState(ingredients);
   const [searchText, setSearchText] = useState(search_text);
@@ -59,28 +60,38 @@ export const CookbookIngredientsView = (props) => {
         />
       }
     >
+      <Button.Checkbox
+        content="Show all ingredients"
+        checked={show_all_ingredients}
+        onClick={() => act('toggle_show_all_ingredients')}
+      />
       <Table m="0.5rem">
         <Table.Row header>
           <Table.Cell>Name</Table.Cell>
           <Table.Cell colspan="2">Stock</Table.Cell>
         </Table.Row>
-        {ingredients
+        {ingredientsKeys
         .filter(
           createSearch(searchText, (ingredient) => {
             return ingredient;
           })
         )
-        .sort((a, b) => a?.name.localeCompare(b?.name))
+        .filter(
+          (ingredient) => show_all_ingredients || ingredients[ingredient] > 0 || (searchText && ingredient.localeCompare(searchText, "en", {sensitivity: 'base'}) === 0)
+        )
+        .sort((a, b) => a.localeCompare(b))
         .map((ingredient, i) => (
           <Table.Row key={i}>
             <Table.Cell>
               {ingredient}
             </Table.Cell>
-            <Table.Cell>
-              <NumberInput minValue="0" value={ingredients[ingredient]} />
+            <Table.Cell width="40px">
+              <NumberInput minValue="0" maxValue="9999" fluid>
+                {ingredients[ingredient]}
+              </NumberInput>
             </Table.Cell>
-            <Table.Cell>
-              <Confirm icon="trash-alt" />
+            <Table.Cell width="40px">
+              <Button.Confirm icon="trash-alt" />
             </Table.Cell>
           </Table.Row>
         ))}
@@ -91,7 +102,7 @@ export const CookbookIngredientsView = (props) => {
 
 export const CookbookRecipesView = (props) => {
   const { act, data } = useBackend();
-  const { categories, current_category, recipes, cookable_recipes, search_text } = data;
+  const { categories, current_category, recipes, cookable_recipes, search_text, show_all_recipes } = data;
 
   const [recipeList, setRecipeList] = useState(recipes);
   const [cookableRecipeList, setCookableRecipeList] = useState(cookable_recipes);
@@ -116,12 +127,20 @@ export const CookbookRecipesView = (props) => {
             />
           }
         >
+          <Button.Checkbox
+            content="Show all recipes"
+            checked={show_all_recipes}
+            onClick={() => act('toggle_show_all_recipes')}
+          />
           <Stack vertical>
             {recipes
               .filter(
                 createSearch(searchText, (recipe) => {
                   return recipe.name + '|' + recipe.container + '|' + recipe.instructions.toString();
                 })
+              )
+              .filter(
+                () => show_all_recipes || recipe.name in cookable_recipes
               )
               .sort((a, b) => a?.name.localeCompare(b?.name))
               .map((recipe, i) => (
