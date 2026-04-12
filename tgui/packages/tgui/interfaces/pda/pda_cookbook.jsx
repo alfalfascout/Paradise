@@ -42,7 +42,9 @@ export const pda_cookbook = (props) => {
 
 export const CookbookIngredientsView = (props) => {
   const { act, data } = useBackend();
-  const { ingredients, search_text, show_all_ingredients } = data;
+  const ingredients = data.ingredients ?? {}; 
+  const search_text = data.search_text ?? "";
+  const show_all_ingredients = data.show_all_ingredients ?? false;
   const ingredientsKeys = Object.keys(ingredients)
   
   const [ingredientsList, setIngredientsList] = useState(ingredients);
@@ -86,9 +88,7 @@ export const CookbookIngredientsView = (props) => {
               {ingredient}
             </Table.Cell>
             <Table.Cell width="40px">
-              <NumberInput minValue="0" maxValue="9999" fluid>
-                {ingredients[ingredient]}
-              </NumberInput>
+              <NumberInput minValue="0" maxValue="9999" value={ingredients[ingredient] || 0} fluid/>
             </Table.Cell>
             <Table.Cell width="40px">
               <Button.Confirm icon="trash-alt" />
@@ -140,7 +140,7 @@ export const CookbookRecipesView = (props) => {
                 })
               )
               .filter(
-                () => show_all_recipes || recipe.name in cookable_recipes
+                (recipe) => show_all_recipes || recipe.name in cookable_recipes
               )
               .sort((a, b) => a?.name.localeCompare(b?.name))
               .map((recipe, i) => (
