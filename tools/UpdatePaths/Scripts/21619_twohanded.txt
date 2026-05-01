@@ -16,3 +16,4 @@
 /obj/item/twohanded/bostaff : /obj/item/bostaff{@OLD}
 /obj/item/twohanded/kinetic_crusher : /obj/item/kinetic_crusher{@OLD}
 /obj/item/twohanded/staff/@SUBTYPES : /obj/item/staff/@SUBTYPES{@OLD}
+/obj/item/twohanded/required/ram/@SUBTYPES : /obj/item/ram/@SUBTYPES{@OLD}

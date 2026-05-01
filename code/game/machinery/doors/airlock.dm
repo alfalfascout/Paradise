@@ -1540,6 +1540,9 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 		if(!panel_open)
 			panel_open = TRUE
 		wires.cut_all()
+		var/datum/effect_system/smoke_spread/smoke = new
+		smoke.set_up(4, 0, loc)
+		smoke.start()
 		update_icon()
 
 /obj/machinery/door/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag = 0, sound_effect = 1, attack_dir)
@@ -1547,25 +1550,25 @@ GLOBAL_LIST_EMPTY(airlock_emissive_underlays)
 	if(obj_integrity < (0.75 * max_integrity))
 		update_icon()
 
-/obj/machinery/door/airlock/deconstruct(disassembled = TRUE, mob/user)
+/obj/machinery/door/airlock/deconstruct(disassembled = TRUE, mob/user, assemblyvar = TRUE)
 	if(!(flags & NODECONSTRUCT))
 		var/obj/structure/door_assembly/DA
-		if(assemblytype)
-			DA = new assemblytype(loc, dir)
-		else
-			DA = new /obj/structure/door_assembly(loc, dir)
-			//If you come across a null assemblytype, it will produce the default assembly instead of disintegrating.
-		DA.reinforced_glass = src.reinforced_glass //tracks whether there's rglass in
-		DA.anchored = TRUE
-		DA.glass = src.glass
-		DA.polarized_glass = polarized_glass
-		DA.state = AIRLOCK_ASSEMBLY_NEEDS_ELECTRONICS
-		DA.created_name = name
-		DA.update_appearance(UPDATE_NAME|UPDATE_ICON)
+		if(assemblyvar)
+			if(assemblytype)
+				DA = new assemblytype(loc, dir)
+			else
+				DA = new /obj/structure/door_assembly(loc, dir)
+				//If you come across a null assemblytype, it will produce the default assembly instead of disintegrating.
+			DA.reinforced_glass = src.reinforced_glass //tracks whether there's rglass in
+			DA.anchored = TRUE
+			DA.glass = src.glass
+			DA.polarized_glass = polarized_glass
+			DA.state = AIRLOCK_ASSEMBLY_NEEDS_ELECTRONICS
+			DA.created_name = name
+			DA.update_appearance(UPDATE_NAME|UPDATE_ICON)
 
-		if(!disassembled)
-			if(DA)
-				DA.obj_integrity = DA.max_integrity * 0.5
+		if(!disassembled && DA)
+			DA.obj_integrity = DA.max_integrity * 0.5
 		if(user)
 			to_chat(user, SPAN_NOTICE("You remove the airlock electronics."))
 		var/obj/item/airlock_electronics/ae

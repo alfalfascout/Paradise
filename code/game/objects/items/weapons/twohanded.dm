@@ -1002,3 +1002,78 @@
 /obj/item/supermatter_halberd/proc/recharge()
 	charged = TRUE
 	playsound(loc, 'sound/machines/sm/accent/normal/1.ogg', 25, TRUE)
+
+
+
+
+/obj/item/ram
+	name = "ram"
+	desc = "A heavy ram used to take down those annoying doors or other structures in your way."
+	icon = 'icons/obj/weapons/melee.dmi'
+	icon_state = "ram"
+	base_icon_state = "ram"
+	lefthand_file = 'icons/mob/inhands/weapons_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/weapons_righthand.dmi'
+	slot_flags = ITEM_SLOT_BOTH_HANDS
+	w_class = WEIGHT_CLASS_HUGE
+	force = 10
+	throwforce = 24
+	throw_range = 3
+	var/force_wielded = 20 // La fire-axe hace 24
+	attack_verb = list("rammed")
+	hitsound = 'sound/weapons/ram.ogg'
+	usesound = 'sound/weapons/ram.ogg'
+	max_integrity = 100
+	var/ramming = FALSE
+
+/obj/item/ram/mob_can_equip(mob/M, slot, disable_warning = FALSE)
+	if(!M)
+		return FALSE
+	if((slot & ITEM_SLOT_LEFT_HAND) && M.r_hand)
+		return FALSE
+	if((slot & ITEM_SLOT_RIGHT_HAND) && M.l_hand)
+		return FALSE
+	return ..()
+
+/obj/item/ram/Initialize(mapload)
+	. = ..()
+	AddComponent(/datum/component/two_handed, require_twohands = TRUE, force_wielded = force_wielded, force_unwielded = force, icon_wielded = "[base_icon_state]1")
+
+/obj/item/ram/update_icon_state()
+	icon_state = initial(icon_state)
+	return ..()
+
+/obj/item/ram/afterattack__legacy__attackchain(atom/target, mob/user, proximity)
+	if(!proximity)
+		return
+	if(istype(target, /obj/machinery/door/airlock) || istype(target, /obj/machinery/door/firedoor) || istype(target, /obj/structure/firelock_frame) || istype(target, /obj/structure/table_frame) || istype(target, /obj/machinery/door/poddoor/shutters) || istype(target, /obj/structure/door_assembly) || \
+	istype(target, /obj/machinery/door/window) || istype(target, /obj/structure/window) || \
+	istype(target, /obj/structure/grille) || istype(target, /obj/structure/table) || \
+	istype(target, /obj/structure/barricade) || istype(target, /obj/structure/plasticflaps) || istype(target, /obj/structure/closet))
+		if(ramming)
+			to_chat(user, "<span class='warning'>You are already ramming!</span>")
+			return
+		var/obj/A = target
+		ramming = TRUE
+		while(A.obj_integrity > 0)
+			if(!proximity)
+				return
+			playsound(get_turf(A), 'sound/weapons/ram.ogg', 150, 1, -1)
+			if(!do_after(user, 10, target = A))
+				ramming = FALSE
+				return
+			user.do_attack_animation(A)
+			to_chat(viewers(user), "<span class='danger'>[user] rams [A]!</span>")
+			if(A.obj_integrity <= 120 && istype(target, /obj/machinery/door/airlock)) // Si el golpe va a romper el airlock dejame manejarlo yo
+				var/obj/machinery/door/airlock/loqueodeaire = target
+				if(!(loqueodeaire.flags & BROKEN))
+					loqueodeaire.obj_break() // Por si las moscas si no estaba roto ya, mas que todo por el humo.
+				loqueodeaire.deconstruct(TRUE, null, FALSE) // El ultimo argumento hara que no deje el assembly al romperse
+			else if(A.obj_integrity <= 120 && istype(A, /obj/machinery/door/firedoor))
+				if(!(A.flags & BROKEN))
+					A.obj_break()
+				A.deconstruct(TRUE)
+			else
+				A.take_damage(120, damtype, "melee", 1)
+		ramming = FALSE
+
