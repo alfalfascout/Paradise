@@ -1056,7 +1056,7 @@
 			AI.controlled_mech = null
 			AI.remote_control = null
 			icon_state = reset_icon(icon_state)+"-open"
-			to_chat(AI, "You have been downloaded to a mobile storage device. Wireless connection offline.")
+			to_chat(AI, SPAN_WARNING("You have been downloaded to a mobile storage device. Wireless connection offline."))
 			to_chat(user, "[SPAN_BOLDNOTICE("Transfer successful")]: [AI.name] ([rand(1000,9999)].exe) removed from [name] and stored within local memory.")
 			card.held_ai = AI
 
