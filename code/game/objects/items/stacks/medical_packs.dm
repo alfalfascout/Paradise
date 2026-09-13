@@ -644,6 +644,14 @@
 	healverb_past = "sutured"
 	depleted_type = /obj/item/suture_needle
 
+/obj/item/stack/medical/adv/suture/on_atom_entered(datum/source, atom/movable/entered)
+	SIGNAL_HANDLER // COMSIG_ATOM_ENTERED
+
+	if(istype(entered, depleted_type)) // Don't auto-merge with needles to avoid player headaches.
+		return
+
+	return ..()
+
 /obj/item/stack/medical/adv/suture/merge(obj/item/stack/material)
 	. = merge_without_del(material)
 	if(is_zero_amount(FALSE))
@@ -753,10 +761,23 @@
 	hitsound = null
 	w_class = WEIGHT_CLASS_TINY
 	materials = list(MAT_METAL = 200)
+	new_attack_chain = TRUE
 
 /obj/item/suture_needle/examine(mob/user)
 	. = ..()
 	. += SPAN_NOTICE("You can add thread with the <i>crafting menu</i>.")
+
+/obj/item/suture_needle/item_interaction(mob/living/user, obj/item/stack/medical/adv/suture/used, list/modifiers)
+	if(!istype(used))
+		return NONE
+
+	if(!used.can_merge(src, TRUE))
+		return NONE
+
+	var/merge_amount = used.merge(src)
+	if(merge_amount)
+		to_chat(user, SPAN_NOTICE("Your [used.name] stack now contains [merge_amount] [used.singular_name]\s."))
+	return ITEM_INTERACT_COMPLETE
 
 /obj/item/biomesh
 	name = "biomesh"
