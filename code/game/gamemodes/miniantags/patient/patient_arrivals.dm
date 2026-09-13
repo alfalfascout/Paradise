@@ -79,14 +79,22 @@
 		EC.next_event_time = world.time + 1 MINUTES
 		log_debug("Patient Arrivals roll canceled due to heightened alert. Rolling another midround in 60 seconds.")
 		return
+	var/list/spawnlocs = list()
+	for(var/obj/effect/landmark/spawner/patient/spawnloc in GLOB.landmarks_list)
+		spawnlocs += get_turf(spawnloc)
+	if(!length(spawnlocs))
+		return
 
-	INVOKE_ASYNC(src, PROC_REF(spawn_arrivals))
+	INVOKE_ASYNC(src, PROC_REF(spawn_arrivals), spawnlocs)
 
-/datum/event/patient_arrivals/proc/spawn_arrivals()
+/datum/event/patient_arrivals/proc/spawn_arrivals(list/spawnlocs)
 	var/list/candidates = SSghost_spawns.poll_candidates("Do you want to play as a Patient?", null, TRUE)
 	// We'll keep spawning new patients until we hit the max_spawn cap of patients.
+	var/list/free_spawnlocs = spawnlocs.Copy()
 	while(max_spawn > 0 && length(candidates))
-		var/turf/picked_loc = pick(GLOB.latejoin)
+		if(!length(free_spawnlocs))
+			free_spawnlocs = spawnlocs.Copy()
+		var/turf/picked_loc = pick_n_take(free_spawnlocs)
 		// Taking a random player from the candidate list.
 		var/mob/patient_mob = pick_n_take(candidates)
 		max_spawn--
@@ -121,7 +129,8 @@
 		log_debug("Patient event made: [tot_number] traitors.")
 		populate_announcement()
 		if(patient_type == "radiation")
-			radiation_pulse(center_of_shuttle, 800, emission_type = BETA_RAD)
+			for(var/obj/effect/landmark/patient_radiation/center in GLOB.landmarks_list)
+				radiation_pulse(get_turf(center), 800, emission_type = BETA_RAD)
 		var/transport_reason = pick(
 			"We don't have the kind of specialized skills necessary to address their needs",
 			"We're simply over capacity",
@@ -152,7 +161,6 @@
 			disaster_desc = "Ever since the outbreak of a terrible disease on [patient_origin]"
 		if("radiation")
 			disaster_desc = "Because of a terrible reactor accident on [patient_origin]"
-			radiation_pulse(center_of_shuttle, 800, emission_type = BETA_RAD)
 		if("general")
 			disaster_desc = "After the [pick("shutdown", "destruction")] of the medical facilities on [patient_origin]"
 

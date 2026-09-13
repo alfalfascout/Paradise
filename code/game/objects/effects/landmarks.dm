@@ -39,6 +39,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/landmark/newplayer_start) //Without this you sp
 /obj/effect/landmark/spawner/patient
 	name = "Patient Start"
 
+/obj/effect/landmark/patient_radiation
+	name = "Patient Radiation Center"
+
 /obj/effect/landmark/spawner/trader
 	name = "traderstart"
 	icon_state = "Trader"
