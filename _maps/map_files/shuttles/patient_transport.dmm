@@ -215,6 +215,14 @@
 /obj/machinery/shower/directional/north,
 /turf/simulated/floor/noslip,
 /area/shuttle/patient)
+"SJ" = (
+/obj/structure/bed,
+/obj/item/bedsheet/medical,
+/obj/machinery/iv_drip,
+/obj/effect/landmark/spawner/patient,
+/obj/effect/landmark/patient_radiation,
+/turf/simulated/floor/mineral/titanium/blue,
+/area/shuttle/patient)
 "UT" = (
 /obj/machinery/computer/shuttle/patient,
 /turf/simulated/floor/mineral/titanium,
@@ -309,7 +317,7 @@ By
 gv
 Ek
 vz
-Ek
+SJ
 uY
 Ek
 xC
