@@ -120,7 +120,7 @@
 	update_icon()
 
 /obj/machinery/door/firedoor/proc/adjust_light()
-	if(stat & (NOPOWER|BROKEN))
+	if(stat & (NOPOWER|BROKEN) || operating)
 		set_light(0)
 		return
 	if(active_alarm)
@@ -327,8 +327,8 @@
 		return
 	. = ..()
 	latetoggle()
-	if(active_alarm)
-		layer = closingLayer // Active firedoors take precedence and remain visible over closed airlocks.
+	if(active_alarm && density)
+		layer = closingLayer // Active firedoors take precedence and remain visible over closed airlocks, unless they're open
 	update_icon(UPDATE_OVERLAYS)
 
 /obj/machinery/door/firedoor/close()
