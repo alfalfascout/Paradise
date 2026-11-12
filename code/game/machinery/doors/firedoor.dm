@@ -120,7 +120,7 @@
 	update_icon()
 
 /obj/machinery/door/firedoor/proc/adjust_light()
-	if(stat & (NOPOWER|BROKEN))
+	if(stat & (NOPOWER|BROKEN) || operating)
 		set_light(0)
 		return
 	if(active_alarm)
@@ -261,17 +261,22 @@
 				new /obj/effect/temp_visual/dir_setting/firedoor_back_opening(get_turf(src), dir)
 			flick("door_opening[obscured_animation ? "_obscured" : ""]", src)
 			playsound(src, 'sound/machines/airlock_ext_open.ogg', 30, 1)
+			addtimer(CALLBACK(src, PROC_REF(adjust_light)), 1 SECONDS)
 		if("closing")
 			if(obscured_animation)
 				new /obj/effect/temp_visual/dir_setting/firedoor_back_closing(get_turf(src), dir)
 			flick("door_closing[obscured_animation ? "_obscured" : ""]", src)
 			playsound(src, 'sound/machines/airlock_ext_close.ogg', 30, 1)
+			addtimer(CALLBACK(src, PROC_REF(adjust_light)), 1 SECONDS)
+
 
 /obj/machinery/door/firedoor/update_icon_state()
 	if(density)
 		icon_state = "door_closed"
+
 	else
 		icon_state = "door_open"
+
 
 /obj/machinery/door/firedoor/update_overlays()
 	. = ..()
@@ -284,6 +289,7 @@
 		if(light && !operating)
 			. += emissive_appearance('icons/obj/doors/doorfire.dmi', "alarmlights[density ? "_closed" : "_open"]_lightmask")
 			. += image('icons/obj/doors/doorfire.dmi', "alarmlights[density ? "_closed" : "_open"]")
+
 
 /obj/machinery/door/firedoor/proc/handle_underlay()
 	var/turf/north_turf = get_step(src, NORTH)
@@ -327,9 +333,10 @@
 		return
 	. = ..()
 	latetoggle()
-	if(active_alarm)
-		layer = closingLayer // Active firedoors take precedence and remain visible over closed airlocks.
+	if(active_alarm && density)
+		layer = closingLayer // Active firedoors take precedence and remain visible over closed airlocks, unless they're open
 	update_icon(UPDATE_OVERLAYS)
+	adjust_light()
 
 /obj/machinery/door/firedoor/close()
 	var/direction = get_current_direction()
@@ -338,6 +345,7 @@
 	. = ..()
 	latetoggle()
 	update_icon(UPDATE_OVERLAYS)
+	adjust_light()
 
 /obj/machinery/door/firedoor/autoclose()
 	if(active_alarm)
